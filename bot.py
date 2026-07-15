@@ -36,10 +36,13 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("search", search_command))
     app.run_polling()
 import os
+import telebot
 from flask import Flask
 from threading import Thread
 
-# Flask uygulaması oluştur (Render'ın web isteğine cevap vermek için)
+TOKEN = os.environ.get("TOKEN")
+bot = telebot.TeleBot(TOKEN)
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -49,11 +52,7 @@ def home():
 def run_web():
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
 
-# Botu başlatan kısım
 if __name__ == "__main__":
-    # Web sunucusunu arka planda başlat
-    Thread(target=run_web).add_task() # Veya sadece Thread(target=run_web).start()
-    
-    # Telegram botunu dinlemeye başla
-    print("Bot çalışıyor...")
+    t = Thread(target=run_web)
+    t.start()
     bot.infinity_polling()
