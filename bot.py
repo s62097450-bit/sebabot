@@ -55,4 +55,4 @@ def run_web():
 if __name__ == "__main__":
     t = Thread(target=run_web)
     t.start()
-    bot.infinity_polling()
+    bot.infinity_polling(skip_pending=True)
