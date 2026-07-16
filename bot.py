@@ -19,16 +19,18 @@ def run_web():
 logging.basicConfig(level=logging.INFO)
 
 async def download_media(update: Update, context: ContextTypes.DEFAULT_TYPE, query, mode):
-    # 1. Tepkiyi manuel gönder (hata alırsak try-except ile sessizce geç)
+    # 1. Tepki ver
     try:
         await update.message.set_reaction(reaction=[ReactionTypeEmoji(emoji="👁️")])
-    except Exception:
-        pass 
-
-    file_path = "/tmp/media.mp4" if mode == "video" else "/tmp/media.mp3"
+    except:
+        pass
+    
+    # 2. Bilgilendirme mesajı gönder
+    status_msg = await update.message.reply_text("🔎 Aratılıyor ve indiriliyor...")
+    
+    file_path = "/tmp/media.mp3" if mode == "audio" else "/tmp/media.mp4"
     
     try:
-        # YouTube arama engellerini aşmak için ek parametreler
         ydl_opts = {
             'outtmpl': file_path,
             'quiet': True,
@@ -36,50 +38,54 @@ async def download_media(update: Update, context: ContextTypes.DEFAULT_TYPE, que
             'ignoreerrors': True,
             'cookiefile': 'cookies.txt',
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-            'extractor_args': {'youtube': {'player_client': ['android']}}, # ÖNEMLİ: Mobil client taklidi
         }
         
         if mode == "audio":
-            ydl_opts.update({'format': 'bestaudio/best', 'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 'default_search': 'ytsearch1:'})
+            ydl_opts.update({
+                'format': 'bestaudio/best', 
+                'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}], 
+                'default_search': 'ytsearch1:'
+            })
         else:
-            ydl_opts.update({'format': 'best[ext=mp4]/best', 'default_search': 'ytsearch1:'})
+            ydl_opts.update({
+                'format': 'best[ext=mp4]/best', 
+                'default_search': 'ytsearch1:'
+            })
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(query, download=True)
-            # Eğer arama sonucu döndüyse ilkini al
-            if 'entries' in info:
-                video = info['entries'][0]
-            else:
-                video = info
+            ydl.download([query])
             
-            final_path = ydl.prepare_filename(video)
-            # Eğer dosya ismi uzantı değişmişse (mp3 ise) onu yakala
+        if os.path.exists(file_path):
+            await status_msg.edit_text("✅ İndirme tamamlandı, gönderiliyor...")
             if mode == "audio":
-                final_path = final_path.rsplit('.', 1)[0] + '.mp3'
-            
-        if os.path.exists(final_path):
-            if mode == "audio":
-                await update.message.reply_audio(audio=open(final_path, 'rb'))
+                await update.message.reply_audio(audio=open(file_path, 'rb'))
             else:
-                await update.message.reply_video(video=open(final_path, 'rb'))
-            os.remove(final_path)
+                await update.message.reply_video(video=open(file_path, 'rb'))
+            await status_msg.delete()
         else:
-            await update.message.reply_text("Üzgünüm, YouTube bu aramayı engelledi.")
+            await status_msg.edit_text("❌ Video bulunamadı.")
             
     except Exception as e:
-        await update.message.reply_text(f"Hata oluştu: {str(e)}")
+        await status_msg.edit_text(f"⚠️ Hata oluştu:\n{str(e)}")
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 async def start(update, context):
-    await update.message.reply_text("Seba Downloader aktif!")
+    await update.message.reply_text("Seba Downloader aktif!\n/search [isim] -> Video\n/indir [isim] -> MP3")
 
 async def arama_video(update, context):
     query = " ".join(context.args)
-    if not query: return
+    if not query:
+        await update.message.reply_text("Lütfen bir isim yaz.")
+        return
     await download_media(update, context, query, "video")
 
 async def indir_sarki(update, context):
     query = " ".join(context.args)
-    if not query: return
+    if not query:
+        await update.message.reply_text("Lütfen bir isim yaz.")
+        return
     await download_media(update, context, query, "audio")
 
 if __name__ == '__main__':
