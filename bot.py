@@ -3,7 +3,7 @@ import os
 import threading
 import yt_dlp
 from flask import Flask
-from telegram import Update
+from telegram import Update, ReactionTypeEmoji
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 
 app_web = Flask(__name__)
@@ -18,8 +18,13 @@ def run_web():
 
 logging.basicConfig(level=logging.INFO)
 
-async def download_media(update, context, query, mode):
-    status_msg = await update.message.reply_text("İşleniyor... ⏳")
+async def download_media(update: Update, context: ContextTypes.DEFAULT_TYPE, query, mode):
+    # Senin mesajına göz emojisi ile tepki ver
+    try:
+        await update.message.set_reaction(reaction=[ReactionTypeEmoji(emoji="👁️")])
+    except Exception:
+        pass # Eğer tepki veremezse botun yetkisi yok demektir, hata vermemesi için geçtik.
+
     file_path = "/tmp/media.mp3" if mode == "audio" else "/tmp/media.mp4"
     
     try:
@@ -28,6 +33,7 @@ async def download_media(update, context, query, mode):
             'quiet': True,
             'no_warnings': True,
             'ignoreerrors': True,
+            'cookiefile': 'cookies.txt',
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         }
         
@@ -45,24 +51,20 @@ async def download_media(update, context, query, mode):
             else:
                 await update.message.reply_video(video=open(file_path, 'rb'))
         else:
-            await update.message.reply_text("İçerik bulunamadı.")
+            await update.message.reply_text("İçerik bulunamadı veya platform engelledi.")
             
     except Exception as e:
         await update.message.reply_text(f"Hata: {str(e)}")
     finally:
         if os.path.exists(file_path):
             os.remove(file_path)
-        try:
-            await status_msg.delete()
-        except:
-            pass
 
 async def start(update, context):
-    await update.message.reply_text("Seba Downloader aktif!\n/indir [isim] -> MP3 gönderir\n/search [isim] -> Video gönderir")
+    await update.message.reply_text("Seba Downloader aktif!\n/indir [isim] -> MP3\n/search [isim] -> Video")
 
 async def handle_message(update, context):
     text = update.message.text
-    if text.startswith("http"):
+    if text and text.startswith("http"):
         await download_media(update, context, text, "video")
 
 async def indir_sarki(update, context):
