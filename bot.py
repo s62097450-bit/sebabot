@@ -16,50 +16,49 @@ def run_web():
     port = int(os.environ.get("PORT", 10000))
     app_web.run(host="0.0.0.0", port=port)
 
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Seba Downloader aktif!")
+    await update.message.reply_text("Seba Downloader Aktif!")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if not text or not text.startswith("http"):
-        return 
+    url = update.message.text
+    if not url or not url.startswith("http"):
+        return
 
-    status_msg = await update.message.reply_text("İndiriliyor... ⏳")
-    file_path = "/tmp/video.mp4"
-    
+    status = await update.message.reply_text("İndiriliyor... ⏳")
+    path = "/tmp/video.mp4"
+
     try:
+        # En stabil ayarlar
         ydl_opts = {
-            'format': 'best',
-            'outtmpl': file_path,
+            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            'outtmpl': path,
             'quiet': True,
             'no_warnings': True,
-            'ignoreerrors': True
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([text])
-            
-        if os.path.exists(file_path):
-            await update.message.reply_video(video=open(file_path, 'rb'))
+            ydl.download([url])
+
+        if os.path.exists(path):
+            await update.message.reply_video(video=open(path, 'rb'))
         else:
-            await update.message.reply_text("İndirme başarısız oldu. Linki kontrol et.")
+            await update.message.reply_text("Video bulunamadı veya platform erişimi kapalı.")
             
     except Exception as e:
         await update.message.reply_text(f"Hata: {str(e)}")
     finally:
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        if os.path.exists(path):
+            os.remove(path)
         try:
-            await status_msg.delete()
+            await status.delete()
         except:
             pass
 
 if __name__ == '__main__':
-    web_thread = threading.Thread(target=run_web, daemon=True)
-    web_thread.start()
-    
+    threading.Thread(target=run_web, daemon=True).start()
     app = ApplicationBuilder().token("8834173312:AAE253ZrgrQGvrKZ_qPwAmUWhd2t_GHGfW8").build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
