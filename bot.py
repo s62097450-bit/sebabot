@@ -11,32 +11,38 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    
     if not text or "http" not in text:
         return 
 
-    await update.message.reply_text("Video indiriliyor, lütfen bekle... ⏳")
+    status_msg = await update.message.reply_text("Video indiriliyor... ⏳")
     
+    file_path = 'video.mp4'
     try:
         ydl_opts = {
-            'format': 'best',
-            'outtmpl': 'video.mp4',
-            'max_filesize': 50 * 1024 * 1024,
+            'format': 'best[filesize<50M]',
+            'outtmpl': file_path,
+            'no_cache': True,
+            'quiet': True,
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([text])
             
-        await update.message.reply_video(video=open('video.mp4', 'rb'))
-        os.remove('video.mp4')
-        
+        if os.path.exists(file_path):
+            await update.message.reply_video(video=open(file_path, 'rb'))
+            
     except Exception as e:
         print(f"HATA: {e}")
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        try:
+            await status_msg.delete()
+        except:
+            pass
 
 if __name__ == '__main__':
     app = ApplicationBuilder().token("8834173312:AAE253ZrgrQGvrKZ_qPwAmUWhd2t_GHGfW8").build()
-    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
     app.run_polling()
