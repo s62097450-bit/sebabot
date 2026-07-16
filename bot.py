@@ -1,56 +1,43 @@
+import logging
 import os
-import yt_dlp
-from flask import Flask
-from threading import Thread
 from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+import yt_dlp
 
-TOKEN = os.environ.get("TOKEN")
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Bot Aktif!"
-
-def run_web():
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Seba Downloader hazır! Linklerini bekliyorum.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    url = update.message.text
+    text = update.message.text
     
-    if "http" not in url:
-        await update.message.reply_text("Lütfen geçerli bir video bağlantısı at.")
-        return
+    if not text or "http" not in text:
+        return 
 
-    await update.message.reply_text("Video indiriliyor, bekle...")
-
-    ydl_opts = {
-        'format': 'mp4/best',
-        'outtmpl': 'video.mp4',
-        'max_filesize': 50 * 1024 * 1024,
-    }
-
+    await update.message.reply_text("Video indiriliyor, lütfen bekle... ⏳")
+    
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        ydl_opts = {
+            'format': 'best',
+            'outtmpl': 'video.mp4',
+            'max_filesize': 50 * 1024 * 1024,
+        }
         
-        with open('video.mp4', 'rb') as video_file:
-            await update.message.reply_video(video_file)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([text])
             
+        await update.message.reply_video(video=open('video.mp4', 'rb'))
         os.remove('video.mp4')
+        
     except Exception as e:
-        await update.message.reply_text(f"İndirme başarısız: {str(e)}")
+        await update.message.reply_text("Üzgünüm, bu videoyu indiremedim.")
+        print(f"HATA: {e}")
 
-def main():
-    Thread(target=run_web, daemon=True).start()
+if __name__ == '__main__':
+    app = ApplicationBuilder().token("TOKEN_BURAYA").build()
     
-    application = ApplicationBuilder().token(TOKEN).concurrent_updates(True).build()
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    print("Bot video indirmeye hazır...")
-    # drop_pending_updates=True eski çakışan kuyrukları patlatır atar
-    application.run_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
-
-if __name__ == "__main__":
-    main()
+    app.run_polling()
