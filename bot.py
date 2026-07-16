@@ -15,7 +15,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text or "http" not in text:
         return 
 
-    # Sadece link içeren mesajlarda işlem başlatır
     await update.message.reply_text("Video indiriliyor, lütfen bekle... ⏳")
     
     try:
@@ -32,7 +31,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove('video.mp4')
         
     except Exception as e:
-        # Hata durumunda sadece log basar, kullanıcıya mesaj atmaz
         print(f"HATA: {e}")
 
 if __name__ == '__main__':
