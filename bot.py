@@ -1,65 +1,55 @@
-import logging
 import os
-import threading
+import logging
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import yt_dlp
-from flask import Flask
-from telegram import Update, ReactionTypeEmoji
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
-
-app_web = Flask(__name__)
-
-@app_web.route('/')
-def home():
-    return "Bot Online", 200
-
-def run_web():
-    port = int(os.environ.get("PORT", 10000))
-    app_web.run(host="0.0.0.0", port=port)
 
 logging.basicConfig(level=logging.INFO)
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    # Desteklenen platformlar
-    platforms = ["youtube.com", "youtu.be", "tiktok.com", "twitter.com", "x.com", "instagram.com"]
-    
-    if any(platform in text for platform in platforms):
-        try:
-            await update.message.set_reaction(reaction=[ReactionTypeEmoji(emoji="👁️")])
-        except:
-            pass
-        
-        status_msg = await update.message.reply_text("🔎 İndiriliyor...")
-        file_path = "/tmp/media.mp4"
-        
-        try:
-            # yt-dlp tüm bu platformları otomatik tanır
-            ydl_opts = {
-                'outtmpl': file_path,
-                'quiet': True,
-                'no_warnings': True,
-                'cookiefile': 'cookies.txt', # Her platform için aynı cookie dosyasını kullanır
-                'format': 'best',
-            }
-            
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([text])
-            
-            if os.path.exists(file_path):
-                await status_msg.edit_text("✅ Gönderiliyor...")
-                await update.message.reply_video(video=open(file_path, 'rb'))
-                await status_msg.delete()
-            else:
-                await status_msg.edit_text("❌ İndirilemedi veya kısıtlı içerik.")
-                
-        except Exception as e:
-            await status_msg.edit_text(f"⚠️ Hata: {str(e)}")
-        finally:
-            if os.path.exists(file_path):
-                os.remove(file_path)
+TOKEN = "8742438265:AAHNoTC1FzNBf3Nd151L7ChYRJxC5D--JLI"
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Merhaba! Bana indirmek istediğin video linkini gönder (Instagram, YouTube, TikTok vb.).")
+
+async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    url = update.message.text
+    if not url.startswith("http"):
+        return
+
+    status_msg = await update.message.reply_text("⏳ Video indiriliyor, lütfen bekleyin...")
+    file_path = "downloaded_video.mp4"
+
+    ydl_opts = {
+        'format': 'best',
+        'outtmpl': file_path,
+        'max_filesize': 50 * 1024 * 1024,
+        'quiet': True
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
+        with open(file_path, 'rb') as video:
+            await update.message.reply_video(video=video)
+
+        await status_msg.delete()
+
+    except Exception as e:
+        await status_msg.edit_text(f"❌ Bir hata oluştu veya video boyutu 50MB'tan büyük: {e}")
+
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_video))
+
+    print("Bot çalışıyor...")
+    app.run_polling()
 
 if __name__ == '__main__':
-    threading.Thread(target=run_web, daemon=True).start()
-    app = ApplicationBuilder().token("8742438265:AAHNoTC1FzNBf3Nd151L7ChYRJxC5D--JLI").build()
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
+    main()
