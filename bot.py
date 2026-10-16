@@ -6,22 +6,21 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 
+# Yeni Token'ın
 TOKEN = "8401131654:AAGSRPyOfQRrvvdHhmxnE-BW__-Izrr23v0"
 
-# /start Komutu
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "👋 **Süper Asistan Botuna Hoş Geldin!**\n\n"
-        "Aşağıdaki komutları kullanarak istediğin araca anında ulaşabilirsin:\n"
+        "Aşağıdaki komutları kullanarak istediğin araca anında ulaşabilirsin:\n\n"
         "⚽ /puan - Süper Lig Puan Durumu\n"
-        "💰 /doviz - Dolar ve Euro Kurları\n"
+        "💵 /doviz - Dolar ve Euro Kurları\n"
         "🪙 /kripto btc - Kripto Para Fiyatı\n"
         "📰 /haber - Son Dakika Haberler\n"
         "ℹ️ /yardim - Tüm Komut Listesi"
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
-# /yardim Komutu
 async def yardim(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "🛠 **KOMUT REHBERİ**\n\n"
@@ -32,7 +31,6 @@ async def yardim(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text, parse_mode="Markdown")
 
-# /doviz Komutu (Canlı Piyasa)
 async def doviz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         res = requests.get("https://api.exchangerate-api.com/v4/latest/USD").json()
@@ -49,7 +47,6 @@ async def doviz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         await update.message.reply_text("❌ Kurlar çekilirken hata oluştu.")
 
-# /kripto Komutu
 async def kripto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Lütfen bir coin simgesi girin. Örnek: `/kripto btc` veya `/kripto eth`", parse_mode="Markdown")
@@ -66,7 +63,6 @@ async def kripto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         await update.message.reply_text("❌ Kripto fiyatı çekilemedi.")
 
-# /puan Komutu
 async def puan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "🏆 **Trendyol Süper Lig Puan Durumu**\n\n"
@@ -78,7 +74,6 @@ async def puan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(msg, parse_mode="Markdown")
 
-# /haber Komutu
 async def haber(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = (
         "📰 **SON DAKİKA HABERLERİ**\n\n"
