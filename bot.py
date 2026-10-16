@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 TOKEN = "8742438265:AAHNoTC1FzNBf3Nd151L7ChYRJxC5D--JLI"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Merhaba! Bana indirmek istediğin video linkini gönder (Özelde veya gruplarda kullanabilirsin).")
+    await update.message.reply_text("Bot çalışıyor")
 
 async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
@@ -40,6 +40,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ydl.download([url])
 
         await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
+        
         with open(file_path, 'rb') as video:
             await message.reply_video(
                 video=video,
@@ -49,7 +50,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await status_msg.delete()
 
     except Exception as e:
-        await status_msg.edit_text(f"❌ Video indirilemedi. (Boyut 50MB'tan büyük olabilir veya site engeli)")
+        await status_msg.edit_text("❌ Video indirilemedi. (Boyut 50MB'tan büyük olabilir veya site engeli)")
         print(f"Hata detayı: {e}")
 
     finally:
@@ -59,8 +60,6 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    
-    # Hem özel sohbetleri hem de grup mesajlarını yakalaması için filtre güncellendi
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_video))
 
     print("Bot çalışıyor...")
