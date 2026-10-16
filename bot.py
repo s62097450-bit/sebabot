@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import yt_dlp
@@ -16,7 +17,7 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not message or not message.text:
         return
 
-    url = message.text
+    url = message.text.strip()
     if not url.startswith("http"):
         return
 
@@ -37,16 +38,45 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            # Önce video bilgilerini (metadata) çekiyoruz
+            info = ydl.extract_info(url, download=True)
+            
+            # Bilgileri değişkenlere atıyoruz
+            uploader = info.get('uploader') or info.get('uploader_id') or 'Bilinmiyor'
+            caption_text = info.get('description') or ''
+            
+            # Tarih formatlama
+            upload_date_str = info.get('upload_date')
+            if upload_date_str:
+                try:
+                    formatted_date = datetime.strptime(upload_date_str, '%Y%m%d').strftime('%d %B %Y')
+                except Exception:
+                    formatted_date = upload_date_str
+            else:
+                formatted_date = "Bilinmiyor"
 
-        await status_msg.edit_text("📤 Video Telegram'ا yükleniyor...")
-        
+            like_count = info.get('like_count') or 0
+            comment_count = info.get('comment_count') or 0
+
+            # İstediğin şablon formatı
+            custom_caption = (
+                f"📷{uploader} 🗓{formatted_date}\n"
+                f"{caption_text}\n"
+                f"❤️{like_count} 💬{comment_count}\n"
+                f"⚡️reLynth | Downloader & Checker"
+            )
+
+            # Telegram yazı sınırı (1024 karakter) kontrolü
+            if len(custom_caption) > 1000:
+                custom_caption = custom_caption[:995] + "..."
+
+        await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
+
         with open(file_path, 'rb') as video:
-            # Önce videoyu gönderiyoruz
-            await message.reply_video(video=video)
-        
-        # Ardından kesin olarak görünmesi için imza mesajını ayrı bir mesaj olarak atıyoruz
-        await message.reply_text("@sebadownloaderbot")
+            await message.reply_video(
+                video=video,
+                caption=custom_caption
+            )
 
         await status_msg.delete()
 
