@@ -60,6 +60,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == '__main__':
     threading.Thread(target=run_web, daemon=True).start()
-    app = ApplicationBuilder().token("8834173312:AAE253ZrgrQGvrKZ_qPwAmUWhd2t_GHGfW8").build()
+    app = ApplicationBuilder().token("8742438265:AAHNoTC1FzNBf3Nd151L7ChYRJxC5D--JLI").build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.run_polling()
