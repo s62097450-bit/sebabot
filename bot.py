@@ -19,11 +19,17 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("⏳ Video indiriliyor, lütfen bekleyin...")
     file_path = "downloaded_video.mp4"
 
+    # TikTok ve diğer sitelerin engellerini aşmak için tarayıcı başlıkları eklendi
     ydl_opts = {
         'format': 'best',
         'outtmpl': file_path,
         'max_filesize': 50 * 1024 * 1024,
-        'quiet': True
+        'quiet': True,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+        }
     }
 
     try:
