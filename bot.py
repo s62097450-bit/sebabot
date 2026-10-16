@@ -39,13 +39,14 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-        await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
+        await status_msg.edit_text("📤 Video Telegram'ا yükleniyor...")
         
         with open(file_path, 'rb') as video:
-            await message.reply_video(
-                video=video,
-                caption="@sebadownloaderbot"
-            )
+            # Önce videoyu gönderiyoruz
+            await message.reply_video(video=video)
+        
+        # Ardından kesin olarak görünmesi için imza mesajını ayrı bir mesaj olarak atıyoruz
+        await message.reply_text("@sebadownloaderbot")
 
         await status_msg.delete()
 
