@@ -1,5 +1,6 @@
 import os
 import logging
+import html
 from datetime import datetime
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -40,58 +41,25 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             
-            uploader = info.get('uploader') or info.get('uploader_id') or 'Bilinmiyor'
-            caption_text = info.get('description') or ''
+            # Instagram verilerini güvenli şekilde alma
+            raw_uploader = info.get('uploader') or info.get('uploader_id') or info.get('channel') or 'Instagram'
+            raw_caption = info.get('description') or info.get('title') or ''
+            
+            uploader = html.escape(str(raw_uploader))
+            caption_text = html.escape(str(raw_caption))
             
             upload_date_str = info.get('upload_date')
             if upload_date_str:
                 try:
-                    formatted_date = datetime.strptime(upload_date_str, '%Y%m%d').strftime('%d %B %Y')
+                    formatted_date = datetime.strptime(str(upload_date_str), '%Y%m%d').strftime('%d %B %Y')
                 except Exception:
-                    formatted_date = upload_date_str
+                    formatted_date = str(upload_date_str)
             else:
-                formatted_date = "Bilinmiyor"
+                formatted_date = datetime.now().strftime('%d %B %Y')
 
-            like_count = info.get('like_count') or 0
-            comment_count = info.get('comment_count') or 0
+            like_count = info.get('like_count') if info.get('like_count') is not None else 0
+            comment_count = info.get('comment_count') if info.get('comment_count') is not None else 0
 
-            # Görnen yazı "Seba Downloader", tıklayınca bota gidecek link
+            # İstediğin Birebir Şablon
             custom_caption = (
-                f"📷 {uploader}  🗓 {formatted_date}\n\n"
-                f"{caption_text}\n\n"
-                f"❤️ {like_count}  💬 {comment_count}\n\n"
-                f"⚡️ [Seba Downloader](https://t.me/sebadownloaderbot)"
-            )
-
-            if len(custom_caption) > 1000:
-                custom_caption = custom_caption[:995] + "..."
-
-        await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
-
-        with open(file_path, 'rb') as video:
-            await message.reply_video(
-                video=video,
-                caption=custom_caption,
-                parse_mode="Markdown"
-            )
-
-        await status_msg.delete()
-
-    except Exception as e:
-        await status_msg.edit_text("❌ Video indirilemedi. (Boyut 50MB'tan büyük olabilir veya site engeli)")
-        print(f"Hata detayı: {e}")
-
-    finally:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-
-def main():
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_video))
-
-    print("Bot çalışıyor...")
-    app.run_polling()
-
-if __name__ == '__main__':
-    main()
+                f"📷 <b>{uploader}</b>  
