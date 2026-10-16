@@ -39,31 +39,61 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            # Video bilgilerini çek
             info = ydl.extract_info(url, download=True)
             
-            raw_uploader = info.get('uploader') or info.get('uploader_id') or info.get('channel') or 'Instagram'
+            # Kullanıcı adı ve Açıklamayı güvenli şekilde al
+            raw_uploader = info.get('uploader') or info.get('uploader_id') or 'Instagram'
             raw_caption = info.get('description') or info.get('title') or ''
             
             uploader = html.escape(str(raw_uploader))
             caption_text = html.escape(str(raw_caption))
             
-            upload_date_str = info.get('upload_date')
-            if upload_date_str:
-                try:
-                    formatted_date = datetime.strptime(str(upload_date_str), '%Y%m%d').strftime('%d %B %Y')
-                except Exception:
-                    formatted_date = str(upload_date_str)
-            else:
-                formatted_date = datetime.now().strftime('%d %B %Y')
+            # Tarih
+            formatted_date = datetime.now().strftime('%d %B %Y')
 
-            like_count = info.get('like_count') if info.get('like_count') is not None else 0
-            comment_count = info.get('comment_count') if info.get('comment_count') is not None else 0
-
-            # Şablon Formatı
+            # Şablon Metni (Çökmeye neden olan riskli sayaçlar temizlendi)
             custom_caption = (
                 f"📷 <b>{uploader}</b>  🗓 <b>{formatted_date}</b>\n\n"
                 f"{caption_text}\n\n"
-                f"❤️ {like_count}  💬 {comment_count}\n\n"
                 f"⚡️ <a href=\"https://t.me/sebadownloaderbot\">Seba Downloader</a>"
             )
 
+            if len(custom_caption) > 1000:
+                custom_caption = custom_caption[:990] + "..."
+
+        await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
+
+        # Videoyu açıklama ile birlikte atıyoruz
+        with open(file_path, 'rb') as video:
+            await message.reply_video(
+                video=video,
+                caption=custom_caption,
+                parse_mode="HTML"
+            )
+
+        await status_msg.delete()
+
+    except Exception as e:
+        # Eğer videonun altına metin eklerken yine Telegram sınırı aşılırsa sadece videoyu ve ayrı mesajı at
+        print(f"Hata detayı: {e}")
+        try:
+            with open(file_path, 'rb') as video:
+                await message.reply_video(video=video)
+            await message.reply_text(
+                text=f"📷 <b>{uploader}</b>\n\n{caption_text}\n\n⚡️ <a href=\"https://t.me/sebadownloaderbot\">Seba Downloader</a>",
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
+            await status_msg.delete()
+        except Exception as inner_error:
+            await status_msg.edit_text("❌ Video indirilemedi. (Boyut 50MB'tan büyük olabilir veya site engeli)")
+
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_
