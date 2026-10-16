@@ -41,7 +41,6 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
             
-            # Instagram verilerini güvenli şekilde alma
             raw_uploader = info.get('uploader') or info.get('uploader_id') or info.get('channel') or 'Instagram'
             raw_caption = info.get('description') or info.get('title') or ''
             
@@ -60,6 +59,11 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             like_count = info.get('like_count') if info.get('like_count') is not None else 0
             comment_count = info.get('comment_count') if info.get('comment_count') is not None else 0
 
-            # İstediğin Birebir Şablon
+            # Şablon Formatı
             custom_caption = (
-                f"📷 <b>{uploader}</b>  
+                f"📷 <b>{uploader}</b>  🗓 <b>{formatted_date}</b>\n\n"
+                f"{caption_text}\n\n"
+                f"❤️ {like_count}  💬 {comment_count}\n\n"
+                f"⚡️ <a href=\"https://t.me/sebadownloaderbot\">Seba Downloader</a>"
+            )
+
