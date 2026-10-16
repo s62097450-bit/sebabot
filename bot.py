@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 
-TOKEN = "8401131654:AAGSRPyOfQRrvvdHhmxnE-BW__-Izrr23v0"
+TOKEN = "8401131654:AAHJVX3Rtz06uCFmm1j1n4SLZlrUUe1oiZ4"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
@@ -27,8 +27,4 @@ async def yardim(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• **/kripto** -> BTC, ETH ve SOL fiyatlarını dolar bazında gösterir.\n"
         "• **/kripto [coin]** -> İstediğin özel coini getirir (Örn: `/kripto doge`).\n"
         "• **/puan** -> Süper Lig puan durumunu listeler.\n"
-        "• **/haber** -> Öne çıkan haber başlıklarını sunar."
-    )
-    await update.message.reply_text(text, parse_mode="Markdown")
-
-async def doviz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        "• **/haber**
