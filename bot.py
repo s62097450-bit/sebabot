@@ -38,14 +38,11 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # Önce video bilgilerini (metadata) çekiyoruz
             info = ydl.extract_info(url, download=True)
             
-            # Bilgileri değişkenlere atıyoruz
             uploader = info.get('uploader') or info.get('uploader_id') or 'Bilinmiyor'
             caption_text = info.get('description') or ''
             
-            # Tarih formatlama
             upload_date_str = info.get('upload_date')
             if upload_date_str:
                 try:
@@ -58,15 +55,14 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             like_count = info.get('like_count') or 0
             comment_count = info.get('comment_count') or 0
 
-            # İstediğin şablon formatı
+            # Görnen yazı "Seba Downloader", tıklayınca bota gidecek link
             custom_caption = (
-                f"📷{uploader} 🗓{formatted_date}\n"
-                f"{caption_text}\n"
-                f"❤️{like_count} 💬{comment_count}\n"
-                f"⚡️reLynth | Downloader & Checker"
+                f"📷 {uploader}  🗓 {formatted_date}\n\n"
+                f"{caption_text}\n\n"
+                f"❤️ {like_count}  💬 {comment_count}\n\n"
+                f"⚡️ [Seba Downloader](https://t.me/sebadownloaderbot)"
             )
 
-            # Telegram yazı sınırı (1024 karakter) kontrolü
             if len(custom_caption) > 1000:
                 custom_caption = custom_caption[:995] + "..."
 
@@ -75,7 +71,8 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open(file_path, 'rb') as video:
             await message.reply_video(
                 video=video,
-                caption=custom_caption
+                caption=custom_caption,
+                parse_mode="Markdown"
             )
 
         await status_msg.delete()
