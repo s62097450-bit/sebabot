@@ -41,16 +41,12 @@ async def download_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await status_msg.edit_text("📤 Video Telegram'a yükleniyor...")
 
-        # 1. Videoyu gönder
+        # 1. Önce videoyu tertemiz gönder
         with open(file_path, 'rb') as video:
             await message.reply_video(video=video)
 
-        # 2. Tıklanabilir Seba Downloader linkini ayrı mesaj olarak at
-        await message.reply_text(
-            text="⚡️ <a href=\"https://t.me/sebadownloaderbot\">Seba Downloader</a>",
-            parse_mode="HTML",
-            disable_web_page_preview=True
-        )
+        # 2. Ardından tam istediğin yazıyı ayrı bir mesaj olarak at
+        await message.reply_text("Powered by @sebadownloaderbot")
 
         await status_msg.delete()
 
